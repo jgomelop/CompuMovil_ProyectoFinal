@@ -4,13 +4,19 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.DrawerValue
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.NavigationDrawerItem
 import androidx.compose.material3.NavigationDrawerItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
@@ -40,6 +46,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
@@ -69,18 +76,38 @@ fun AppNavigation() {
             }
         }
     ) {
-        NavHost(navController, startDestination = "registrar") {
-            composable("registrar") {
-                val viewModel: RegistrarActividadViewModel = viewModel()
-                RegistrarActividadScreen(viewModel)
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = { Text("Actividades OAI") },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            scope.launch { drawerState.open() }
+                        }) {
+                            Icon(Icons.Default.Menu, contentDescription = "Abrir menú")
+                        }
+                    }
+                )
             }
-            composable("lista") {
-                val viewModel: ListarActividadesViewModel = viewModel()
-                ListarActividadesScreen(viewModel)
+        ) { innerPadding ->
+            NavHost(
+                navController = navController,
+                startDestination = "registrar",
+                modifier = Modifier.padding(innerPadding)
+            ) {
+                composable("registrar") {
+                    val viewModel: RegistrarActividadViewModel = viewModel()
+                    RegistrarActividadScreen(viewModel)
+                }
+                composable("lista") {
+                    val viewModel: ListarActividadesViewModel = viewModel()
+                    ListarActividadesScreen(viewModel)
+                }
             }
         }
     }
 }
+
 
 @Preview(showBackground = true)
 @Composable
