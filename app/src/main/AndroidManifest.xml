@@ -23,6 +23,17 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".login.LoginActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".sections.registraractividad.RegistrarActividadActivity"
+            android:exported="false" />
+
+        <activity
+            android:name=".sections.listaractividades.ListarActividadesActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

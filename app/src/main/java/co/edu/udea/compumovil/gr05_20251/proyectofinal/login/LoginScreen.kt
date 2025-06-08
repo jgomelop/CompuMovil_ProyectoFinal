@@ -1,62 +1,148 @@
+@file:OptIn(ExperimentalMaterial3Api::class)
+
 package co.edu.udea.compumovil.gr05_20251.proyectofinal.login
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.text.input.*
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.ui.unit.sp
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.state.LoginUiState
 
 @Composable
-fun LoginScreen(viewModel: LoginViewModel) {
+fun LoginScreen(
+    uiState: LoginUiState,
+    onEmailChanged: (String) -> Unit,
+    onPasswordChanged: (String) -> Unit,
+    onLoginClick: () -> Unit,
+    onSignUpClick: () -> Unit,
+    onToggleAuthMode: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val passwordFocusRequester = remember { FocusRequester() }
+    val keyboardController = LocalSoftwareKeyboardController.current
+
     Column(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
-            .padding(32.dp),
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        OutlinedTextField(
-            value = viewModel.email.value,
-            onValueChange = viewModel::onEmailChange,
-            label = { Text("Correo electrónico") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Email
-            )
+        // Título
+        Text(
+            text = if (uiState.isSignUpMode) "Crear Cuenta" else "Iniciar Sesión",
+            fontSize = 28.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(bottom = 32.dp)
         )
+
+        // Campo de email
+        OutlinedTextField(
+            value = uiState.email,
+            onValueChange = onEmailChanged,
+            label = { Text("Correo electrónico") },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Email,
+                imeAction = ImeAction.Next
+            ),
+            keyboardActions = KeyboardActions(
+                onNext = { passwordFocusRequester.requestFocus() }
+            ),
+            singleLine = true,
+            enabled = !uiState.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        // Campo de contraseña
+        OutlinedTextField(
+            value = uiState.password,
+            onValueChange = onPasswordChanged,
+            label = { Text("Contraseña") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Password,
+                imeAction = ImeAction.Done
+            ),
+            keyboardActions = KeyboardActions(
+                onDone = {
+                    keyboardController?.hide()
+                    if (uiState.isSignUpMode) onSignUpClick() else onLoginClick()
+                }
+            ),
+            singleLine = true,
+            enabled = !uiState.isLoading,
+            modifier = Modifier
+                .fillMaxWidth()
+                .focusRequester(passwordFocusRequester)
+                .padding(bottom = 24.dp)
+        )
+
+        // Mensaje de error
+        if (uiState.errorMessage != null) {
+            Card(
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 16.dp)
+            ) {
+                Text(
+                    text = uiState.errorMessage,
+                    color = MaterialTheme.colorScheme.onErrorContainer,
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(12.dp)
+                )
+            }
+        }
+
+        // Botón principal
+        Button(
+            onClick = if (uiState.isSignUpMode) onSignUpClick else onLoginClick,
+            enabled = !uiState.isLoading && uiState.email.isNotBlank() && uiState.password.isNotBlank(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(48.dp)
+        ) {
+            if (uiState.isLoading) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = MaterialTheme.colorScheme.onPrimary
+                )
+            } else {
+                Text(
+                    text = if (uiState.isSignUpMode) "Registrarse" else "Iniciar Sesión",
+                    fontSize = 16.sp
+                )
+            }
+        }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        OutlinedTextField(
-            value = viewModel.password.value,
-            onValueChange = viewModel::onPasswordChange,
-            label = { Text("Contraseña") },
-            singleLine = true,
-            modifier = Modifier.fillMaxWidth(),
-            visualTransformation = PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions.Default.copy(
-                keyboardType = KeyboardType.Password
-            )
-        )
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Button(
-            onClick = { /* Acción de login */ },
-            modifier = Modifier.fillMaxWidth()
+        // Botón para cambiar modo
+        TextButton(
+            onClick = onToggleAuthMode,
+            enabled = !uiState.isLoading
         ) {
-            Text("Iniciar sesión")
+            Text(
+                text = if (uiState.isSignUpMode)
+                    "¿Ya tienes cuenta? Iniciar sesión"
+                else
+                    "¿No tienes cuenta? Registrarse"
+            )
         }
     }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun LoginScreenPreview() {
-    val fakeViewModel = remember { LoginViewModel() }
-    LoginScreen(viewModel = fakeViewModel)
 }
