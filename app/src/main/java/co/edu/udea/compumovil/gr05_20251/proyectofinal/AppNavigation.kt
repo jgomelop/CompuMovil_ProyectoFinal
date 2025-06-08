@@ -15,6 +15,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.navigation.compose.rememberNavController
+import androidx.compose.runtime.getValue
 import kotlinx.coroutines.launch
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -23,6 +24,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades.ListarActividadesScreen
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades.ListarActividadesViewModel
@@ -83,7 +85,21 @@ fun AppNavigation() {
             ) {
                 composable("registrarActividad") {
                     val viewModel: RegistrarActividadViewModel = viewModel()
-                    RegistrarActividadScreen(viewModel)
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+                    RegistrarActividadScreen(
+                        uiState = uiState,
+                        onActividadSeleccionada = viewModel::seleccionarActividad,
+                        onSubactividadSeleccionada = viewModel::seleccionarSubactividad,
+                        onFechaChanged = viewModel::actualizarFecha,
+                        onHorasChanged = viewModel::actualizarHoras,
+                        onMinutosChanged = viewModel::actualizarMinutos,
+                        onComentariosChanged = viewModel::actualizarComentarios,
+                        onGuardarClick = viewModel::guardarRegistro,
+                        onErrorDismissed = viewModel::limpiarError,
+                        onSuccessDismissed = viewModel::limpiarEstadoGuardado,
+                        modifier = Modifier
+                    )
                 }
                 composable("listarActividades") {
                     val viewModel: ListarActividadesViewModel = viewModel()
@@ -93,7 +109,6 @@ fun AppNavigation() {
         }
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable
