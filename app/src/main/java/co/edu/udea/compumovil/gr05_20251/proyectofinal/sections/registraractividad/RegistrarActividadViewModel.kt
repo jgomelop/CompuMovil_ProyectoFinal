@@ -123,6 +123,7 @@ class RegistrarActividadViewModel : ViewModel() {
                         guardadoExitoso = true,
                         errorMessage = null
                     )
+                    limpiarFormulario()
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -182,5 +183,18 @@ class RegistrarActividadViewModel : ViewModel() {
 
     fun limpiarEstadoGuardado() {
         _uiState.value = _uiState.value.copy(guardadoExitoso = false)
+    }
+
+    private fun limpiarFormulario() {
+        val fechaActual = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        _uiState.value = _uiState.value.copy(
+            actividadSeleccionada = null,
+            subactividadSeleccionada = null,
+            subactividades = emptyList(),
+            fecha = fechaActual,
+            horas = "",
+            minutos = "",
+            comentarios = ""
+        )
     }
 }

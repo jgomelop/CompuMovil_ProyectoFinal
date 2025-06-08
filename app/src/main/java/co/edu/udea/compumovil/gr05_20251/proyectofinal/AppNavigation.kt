@@ -1,5 +1,6 @@
 package co.edu.udea.compumovil.gr05_20251.proyectofinal
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DrawerValue
@@ -23,6 +24,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -85,10 +88,31 @@ fun AppNavigation() {
             ) {
                 composable("registrarActividad") {
                     val viewModel: RegistrarActividadViewModel = viewModel()
-                    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+                    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+                    val context = LocalContext.current
+
+                    // Mostrar toast para errores
+                    LaunchedEffect(uiState.value.errorMessage) {
+                        uiState.value.errorMessage?.let { error ->
+                            Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                            viewModel.limpiarError()
+                        }
+                    }
+
+                    // 🆕 Mostrar toast de confirmación cuando se guarda exitosamente
+                    LaunchedEffect(uiState.value.guardadoExitoso) {
+                        if (uiState.value.guardadoExitoso) {
+                            Toast.makeText(
+                                context,
+                                "✅ Registro guardado exitosamente",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            viewModel.limpiarEstadoGuardado()
+                        }
+                    }
 
                     RegistrarActividadScreen(
-                        uiState = uiState,
+                        uiState = uiState.value,
                         onActividadSeleccionada = viewModel::seleccionarActividad,
                         onSubactividadSeleccionada = viewModel::seleccionarSubactividad,
                         onFechaChanged = viewModel::actualizarFecha,
