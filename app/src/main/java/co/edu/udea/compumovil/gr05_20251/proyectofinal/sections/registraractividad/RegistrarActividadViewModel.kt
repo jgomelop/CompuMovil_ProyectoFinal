@@ -8,6 +8,7 @@ import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.RegistroActividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.Subactividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.repository.FirebaseRepository
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.state.RegistrarActividadUiState
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -17,7 +18,7 @@ import java.util.*
 
 class RegistrarActividadViewModel : ViewModel() {
     private val repository = FirebaseRepository()
-
+    private val auth = FirebaseAuth.getInstance()
     private val _uiState = MutableStateFlow(RegistrarActividadUiState())
     val uiState: StateFlow<RegistrarActividadUiState> = _uiState.asStateFlow()
 
@@ -107,6 +108,7 @@ class RegistrarActividadViewModel : ViewModel() {
 
             try {
                 val registro = RegistroActividad(
+                    userId = auth.currentUser!!.uid, // User ya está autenticado
                     actividadId = estado.actividadSeleccionada!!.id,
                     subactividadId = estado.subactividadSeleccionada?.id,
                     fecha = estado.fecha,

@@ -2,7 +2,7 @@ package co.edu.udea.compumovil.gr05_20251.proyectofinal.data
 
 // RegistroActividad.kt
 data class RegistroActividad(
-    val id: String = "",
+    val userId: String = "",
     val actividadId: String = "",
     val subactividadId: String? = null,
     val fecha: String = "", // Formato: "yyyy-MM-dd"
