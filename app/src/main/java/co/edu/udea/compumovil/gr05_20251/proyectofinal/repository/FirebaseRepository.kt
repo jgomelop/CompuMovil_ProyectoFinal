@@ -5,6 +5,7 @@ import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.Actividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.RegistroActividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.Subactividad
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.Query
 import kotlinx.coroutines.tasks.await
 
 class FirebaseRepository {
@@ -51,6 +52,51 @@ class FirebaseRepository {
             Result.success(docRef.id)
         } catch (e: Exception) {
             Result.failure(e)
+        }
+    }
+
+    // Obtener todos los registros de actividades para un usuario
+    suspend fun obtenerRegistrosActividades(userId: String): List<RegistroActividad> {
+        return try {
+            val snapshot = db.collection("registros_actividades")
+                .whereEqualTo("userId", userId)
+                .orderBy("timestamp", Query.Direction.DESCENDING)
+                .get()
+                .await()
+
+            snapshot.documents.mapNotNull { doc ->
+                doc.toObject(RegistroActividad::class.java)
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    // Obtener una actividad por ID
+    suspend fun obtenerActividadPorId(actividadId: String): Actividad? {
+        return try {
+            val snapshot = db.collection("actividades")
+                .document(actividadId)
+                .get()
+                .await()
+
+            snapshot.toObject(Actividad::class.java)?.copy(id = snapshot.id)
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Obtener una subactividad por ID
+    suspend fun obtenerSubactividadPorId(subactividadId: String): Subactividad? {
+        return try {
+            val snapshot = db.collection("subactividades")
+                .document(subactividadId)
+                .get()
+                .await()
+
+            snapshot.toObject(Subactividad::class.java)?.copy(id = snapshot.id)
+        } catch (e: Exception) {
+            null
         }
     }
 }

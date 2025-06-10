@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.repository.FirebaseRepository
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades.ListarActividadesScreen
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades.ListarActividadesViewModel
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.registraractividad.RegistrarActividadScreen
@@ -145,8 +146,12 @@ fun AppNavigation(
                         modifier = Modifier
                     )
                 }
+
                 composable("listarActividades") {
-                    val viewModel: ListarActividadesViewModel = viewModel()
+                    val repository = FirebaseRepository()
+                    val viewModel: ListarActividadesViewModel = viewModel {
+                        ListarActividadesViewModel(repository)
+                    }
                     ListarActividadesScreen(viewModel)
                 }
             }
