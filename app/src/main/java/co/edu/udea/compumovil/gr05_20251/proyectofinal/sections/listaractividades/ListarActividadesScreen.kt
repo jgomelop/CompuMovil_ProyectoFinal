@@ -9,17 +9,21 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import android.widget.Toast
 import com.google.firebase.auth.FirebaseAuth
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -29,10 +33,22 @@ fun ListarActividadesScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val showDialog by viewModel.showDialog.collectAsState()
+    val showDeleteConfirmation by viewModel.showDeleteConfirmation.collectAsState()
     val selectedRegistro by viewModel.selectedRegistro.collectAsState()
+    val isDeleting by viewModel.isDeleting.collectAsState()
+    val deleteMessage by viewModel.deleteMessage.collectAsState()
+    val context = LocalContext.current
 
     // Obtener el usuario actual de Firebase Auth
     val currentUser = FirebaseAuth.getInstance().currentUser
+
+    // Mostrar toast para mensajes de eliminación
+    LaunchedEffect(deleteMessage) {
+        deleteMessage?.let { message ->
+            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+            viewModel.limpiarMensajeBorrar()
+        }
+    }
 
     LaunchedEffect(currentUser?.uid) {
         currentUser?.uid?.let { userId ->
@@ -168,7 +184,22 @@ fun ListarActividadesScreen(
         DetalleRegistroDialog(
             registro = selectedRegistro!!,
             viewModel = viewModel,
-            onDismiss = { viewModel.ocultarDetalles() }
+            onDismiss = { viewModel.ocultarDetalles() },
+            onDelete = { viewModel.mostrarConfirmacionBorrar() }
+        )
+    }
+
+    // Dialog de confirmación para eliminar
+    if (showDeleteConfirmation && selectedRegistro != null) {
+        ConfirmDeleteDialog(
+            registro = selectedRegistro!!,
+            isDeleting = isDeleting,
+            onConfirm = {
+                currentUser.uid?.let { userId ->
+                    viewModel.borrarRegistro(userId)
+                }
+            },
+            onDismiss = { viewModel.ocultarConfirmacionBorrar() }
         )
     }
 }
@@ -245,7 +276,8 @@ fun RegistroRow(
 fun DetalleRegistroDialog(
     registro: RegistroConDetalles,
     viewModel: ListarActividadesViewModel,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    onDelete: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -328,12 +360,39 @@ fun DetalleRegistroDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón de cerrar
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier.fillMaxWidth()
+                // Botones de acción
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    Text("Cerrar")
+                    // Botón Borrar
+                    Button(
+                        onClick = onDelete,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.error
+                        )
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Borrar",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
+
+                    // Botón Editar (preparado para futura implementación)
+                    OutlinedButton(
+                        onClick = { /* TODO: Implementar editar */ },
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            modifier = Modifier.size(16.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                    }
                 }
             }
         }
@@ -363,4 +422,72 @@ fun DetalleItem(
             textAlign = TextAlign.End
         )
     }
+}
+
+@Composable
+fun ConfirmDeleteDialog(
+    registro: RegistroConDetalles,
+    isDeleting: Boolean,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = { if (!isDeleting) onDismiss() },
+        title = {
+            Text(
+                text = "Confirmar eliminación",
+                fontWeight = FontWeight.Bold
+            )
+        },
+        text = {
+            Column {
+                Text("¿Estás seguro de que quieres eliminar este registro?")
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Actividad: ${registro.nombreActividad}",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Medium
+                )
+                if (registro.nombreSubactividad != null) {
+                    Text(
+                        text = "Subactividad: ${registro.nombreSubactividad}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Esta acción no se puede deshacer.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.error
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                enabled = !isDeleting,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                )
+            ) {
+                if (isDeleting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp,
+                        color = MaterialTheme.colorScheme.onError
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+                Text(if (isDeleting) "Eliminando..." else "Eliminar")
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                enabled = !isDeleting
+            ) {
+                Text("Cancelar")
+            }
+        }
+    )
 }

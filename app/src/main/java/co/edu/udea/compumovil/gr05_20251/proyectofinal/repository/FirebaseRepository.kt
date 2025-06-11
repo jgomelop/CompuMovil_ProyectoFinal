@@ -56,7 +56,7 @@ class FirebaseRepository {
     }
 
     // Obtener todos los registros de actividades para un usuario
-    suspend fun obtenerRegistrosActividades(userId: String): List<RegistroActividad> {
+    suspend fun obtenerRegistrosActividades(userId: String): List<Pair<String, RegistroActividad>> {
         return try {
             val snapshot = db.collection("registros_actividades")
                 .whereEqualTo("userId", userId)
@@ -65,7 +65,9 @@ class FirebaseRepository {
                 .await()
 
             snapshot.documents.mapNotNull { doc ->
-                doc.toObject(RegistroActividad::class.java)
+                doc.toObject(RegistroActividad::class.java)?.let { registro ->
+                    Pair(doc.id, registro)
+                }
             }
         } catch (e: Exception) {
             emptyList()
@@ -97,6 +99,20 @@ class FirebaseRepository {
             snapshot.toObject(Subactividad::class.java)?.copy(id = snapshot.id)
         } catch (e: Exception) {
             null
+        }
+    }
+
+    // Eliminar registro de actividad
+    suspend fun eliminarRegistroActividad(registroId: String): Result<Unit> {
+        return try {
+            db.collection("registros_actividades")
+                .document(registroId)
+                .delete()
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
         }
     }
 }

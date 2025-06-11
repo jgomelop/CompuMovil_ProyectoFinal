@@ -12,7 +12,8 @@ import kotlinx.coroutines.launch
 data class RegistroConDetalles(
     val registro: RegistroActividad,
     val nombreActividad: String,
-    val nombreSubactividad: String? = null
+    val nombreSubactividad: String? = null,
+    val registroId: String = "" // Agregamos el ID del documento
 )
 
 sealed class UiState {
@@ -34,15 +35,24 @@ class ListarActividadesViewModel(
     private val _showDialog = MutableStateFlow(false)
     val showDialog: StateFlow<Boolean> = _showDialog.asStateFlow()
 
+    private val _showDeleteConfirmation = MutableStateFlow(false)
+    val showDeleteConfirmation: StateFlow<Boolean> = _showDeleteConfirmation.asStateFlow()
+
+    private val _isDeleting = MutableStateFlow(false)
+    val isDeleting: StateFlow<Boolean> = _isDeleting.asStateFlow()
+
+    private val _deleteMessage = MutableStateFlow<String?>(null)
+    val deleteMessage: StateFlow<String?> = _deleteMessage.asStateFlow()
+
     fun cargarRegistros(userId: String) {
         viewModelScope.launch {
             _uiState.value = UiState.Loading
 
             try {
-                val registros = repository.obtenerRegistrosActividades(userId)
+                val registrosConIds = repository.obtenerRegistrosActividades(userId)
                 val registrosConDetalles = mutableListOf<RegistroConDetalles>()
 
-                for (registro in registros) {
+                for ((documentId, registro) in registrosConIds) {
                     val actividad = repository.obtenerActividadPorId(registro.actividadId)
                     val subactividad = if (registro.subactividadId != null) {
                         repository.obtenerSubactividadPorId(registro.subactividadId)
@@ -53,7 +63,8 @@ class ListarActividadesViewModel(
                             RegistroConDetalles(
                                 registro = registro,
                                 nombreActividad = actividad.nombre,
-                                nombreSubactividad = subactividad?.nombre
+                                nombreSubactividad = subactividad?.nombre,
+                                registroId = documentId
                             )
                         )
                     }
@@ -74,6 +85,53 @@ class ListarActividadesViewModel(
     fun ocultarDetalles() {
         _showDialog.value = false
         _selectedRegistro.value = null
+    }
+
+    fun mostrarConfirmacionBorrar() {
+        _showDeleteConfirmation.value = true
+    }
+
+    fun ocultarConfirmacionBorrar() {
+        _showDeleteConfirmation.value = false
+    }
+
+    fun borrarRegistro(userId: String) {
+        val registro = _selectedRegistro.value ?: return
+
+        viewModelScope.launch {
+            _isDeleting.value = true
+
+            try {
+                val result = repository.eliminarRegistroActividad(registro.registroId)
+
+                if (result.isSuccess) {
+                    _deleteMessage.value = "Registro eliminado exitosamente"
+
+                    // Ocultar diálogos ANTES de actualizar la lista
+                    _showDialog.value = false
+                    _showDeleteConfirmation.value = false
+                    _selectedRegistro.value = null
+
+                    // Actualizar la lista localmente eliminando el registro
+                    val currentState = _uiState.value
+                    if (currentState is UiState.Success) {
+                        val updatedList = currentState.registros.filter { it.registroId != registro.registroId }
+                        _uiState.value = UiState.Success(updatedList)
+                    }
+
+                } else {
+                    _deleteMessage.value = "Error al eliminar el registro"
+                }
+            } catch (e: Exception) {
+                _deleteMessage.value = "Error al eliminar el registro: ${e.message}"
+            } finally {
+                _isDeleting.value = false
+            }
+        }
+    }
+
+    fun limpiarMensajeBorrar() {
+        _deleteMessage.value = null
     }
 
     fun formatearTiempo(horas: Int, minutos: Int): String {
