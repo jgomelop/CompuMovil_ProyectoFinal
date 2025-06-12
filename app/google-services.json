@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "810710640313",
+    "project_id": "control-actividades-oai",
+    "storage_bucket": "control-actividades-oai.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:810710640313:android:2f48205585254b361d9d68",
+        "android_client_info": {
+          "package_name": "co.edu.udea.compumovil.gr05_20251.proyectofinal"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwlqSE0hUgcTVinV-jazb1smtsru7M3Jo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
