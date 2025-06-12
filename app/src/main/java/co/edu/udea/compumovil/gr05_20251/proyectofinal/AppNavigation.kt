@@ -22,8 +22,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.compose.material3.Icon
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ExitToApp
-import androidx.compose.material.icons.filled.ExitToApp
+// import androidx.compose.material.icons.automirrored.filled.ExitToApp // Removed to avoid conflict
+import androidx.compose.material.icons.filled.ExitToApp // Keeping this one for standard ExitToApp icon
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
@@ -109,31 +109,40 @@ fun AppNavigation(
             ) {
                 composable("registrarActividad") {
                     val viewModel: RegistrarActividadViewModel = viewModel()
-                    val uiState = viewModel.uiState.collectAsStateWithLifecycle()
+                    val uiState by viewModel.uiState.collectAsStateWithLifecycle() // Corrected collection
+
+                    // Call iniciarFormulario to load activities for a new registration
+                    // This will be called when navigating to "registrarActividad" from the drawer
+                    LaunchedEffect(Unit) {
+                        viewModel.iniciarFormulario(null) // Pass null for new registration
+                    }
+
                     val context = LocalContext.current
 
                     // Mostrar toast para errores
-                    LaunchedEffect(uiState.value.errorMessage) {
-                        uiState.value.errorMessage?.let { error ->
+                    LaunchedEffect(uiState.errorMessage) {
+                        uiState.errorMessage?.let { error ->
                             Toast.makeText(context, error, Toast.LENGTH_LONG).show()
                             viewModel.limpiarError()
                         }
                     }
 
-                    // 🆕 Mostrar toast de confirmación cuando se guarda exitosamente
-                    LaunchedEffect(uiState.value.guardadoExitoso) {
-                        if (uiState.value.guardadoExitoso) {
+                    // Mostrar toast de confirmación cuando se guarda exitosamente
+                    LaunchedEffect(uiState.guardadoExitoso) {
+                        if (uiState.guardadoExitoso) {
                             Toast.makeText(
                                 context,
                                 "✅ Registro guardado exitosamente",
                                 Toast.LENGTH_SHORT
                             ).show()
                             viewModel.limpiarEstadoGuardado()
+                            // If you want to navigate back after successful save from the drawer, uncomment:
+                            // navController.popBackStack()
                         }
                     }
 
                     RegistrarActividadScreen(
-                        uiState = uiState.value,
+                        uiState = uiState, // Pass uiState directly, not uiState.value
                         onActividadSeleccionada = viewModel::seleccionarActividad,
                         onSubactividadSeleccionada = viewModel::seleccionarSubactividad,
                         onFechaChanged = viewModel::actualizarFecha,

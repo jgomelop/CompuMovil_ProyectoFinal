@@ -1,5 +1,6 @@
 package co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades
 
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -17,6 +18,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -24,7 +26,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import android.widget.Toast
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import com.google.firebase.auth.FirebaseAuth
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.registraractividad.RegistrarActividadActivity // Import RegistrarActividadActivity
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,11 +43,28 @@ fun ListarActividadesScreen(
     val isDeleting by viewModel.isDeleting.collectAsState()
     val deleteMessage by viewModel.deleteMessage.collectAsState()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current // Get the current lifecycle owner
 
     // Obtener el usuario actual de Firebase Auth
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // Mostrar toast para mensajes de eliminación
+    // Use DisposableEffect to observe lifecycle events and refresh data on resume
+    // This ensures data is reloaded when the screen becomes active again, e.g., after returning from edit
+    DisposableEffect(lifecycleOwner, currentUser?.uid) { // Added currentUser?.uid to the key for re-triggering if user changes
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                currentUser?.uid?.let { userId ->
+                    viewModel.cargarRegistros(userId)
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { // This onDispose is correctly used within DisposableEffect
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
+
+    // Show toast for deletion messages
     LaunchedEffect(deleteMessage) {
         deleteMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -50,13 +72,16 @@ fun ListarActividadesScreen(
         }
     }
 
-    LaunchedEffect(currentUser?.uid) {
-        currentUser?.uid?.let { userId ->
-            viewModel.cargarRegistros(userId)
+    // Determine the list to display based on uiState
+    // This ensures currentRegistros is always a valid list, even during Loading or Error states.
+    val currentRegistros = remember(uiState) {
+        when (uiState) {
+            is UiState.Success -> (uiState as UiState.Success).registros
+            else -> emptyList() // Return empty list for Loading or Error states to prevent ClassCastException
         }
     }
 
-    // Si no hay usuario autenticado, mostrar mensaje
+    // If no authenticated user, show message
     if (currentUser == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -112,7 +137,8 @@ fun ListarActividadesScreen(
             }
 
             is UiState.Success -> {
-                if ((uiState as UiState.Success).registros.isEmpty()) {
+                // Use currentRegistros here, which is already safely cast or empty
+                if (currentRegistros.isEmpty()) {
                     Card(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -166,7 +192,8 @@ fun ListarActividadesScreen(
                                 RoundedCornerShape(bottomStart = 8.dp, bottomEnd = 8.dp)
                             )
                     ) {
-                        items((uiState as UiState.Success).registros) { registro ->
+                        // Pass currentRegistros directly, no cast needed here
+                        items(currentRegistros) { registro ->
                             RegistroRow(
                                 registro = registro,
                                 viewModel = viewModel,
@@ -185,7 +212,15 @@ fun ListarActividadesScreen(
             registro = selectedRegistro!!,
             viewModel = viewModel,
             onDismiss = { viewModel.ocultarDetalles() },
-            onDelete = { viewModel.mostrarConfirmacionBorrar() }
+            onDelete = { viewModel.mostrarConfirmacionBorrar() },
+            onEdit = {
+                // Navigate to RegistrarActividadActivity with the selected registroId
+                val intent = Intent(context, RegistrarActividadActivity::class.java).apply {
+                    putExtra(RegistrarActividadActivity.EXTRA_REGISTRO_ID, selectedRegistro!!.registroId)
+                }
+                context.startActivity(intent)
+                viewModel.ocultarDetalles() // Close the details dialog
+            }
         )
     }
 
@@ -277,7 +312,8 @@ fun DetalleRegistroDialog(
     registro: RegistroConDetalles,
     viewModel: ListarActividadesViewModel,
     onDismiss: () -> Unit,
-    onDelete: () -> Unit
+    onDelete: () -> Unit,
+    onEdit: () -> Unit // New callback for edit button
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -379,11 +415,12 @@ fun DetalleRegistroDialog(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        Text("Borrar")
                     }
 
-                    // Botón Editar (preparado para futura implementación)
+                    // Botón Editar
                     OutlinedButton(
-                        onClick = { /* TODO: Implementar editar */ },
+                        onClick = onEdit, // Use the new onEdit callback
                         modifier = Modifier.weight(1f)
                     ) {
                         Icon(
@@ -392,6 +429,7 @@ fun DetalleRegistroDialog(
                             modifier = Modifier.size(16.dp)
                         )
                         Spacer(modifier = Modifier.width(4.dp))
+                        Text("Editar")
                     }
                 }
             }
@@ -476,7 +514,7 @@ fun ConfirmDeleteDialog(
                         strokeWidth = 2.dp,
                         color = MaterialTheme.colorScheme.onError
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
                 }
                 Text(if (isDeleting) "Eliminando..." else "Eliminar")
             }

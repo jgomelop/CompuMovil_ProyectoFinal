@@ -23,37 +23,79 @@ class RegistrarActividadViewModel : ViewModel() {
     val uiState: StateFlow<RegistrarActividadUiState> = _uiState.asStateFlow()
 
     init {
-        cargarActividades()
-        // Establecer fecha actual por defecto
+        // We will load activities from an external function now, possibly after receiving a registroId
+        // Establecer fecha actual por defecto si no es un modo de edición
         val fechaActual = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         _uiState.value = _uiState.value.copy(fecha = fechaActual)
     }
 
-    private fun cargarActividades() {
+    // Function to initialize the form for a new registration or load data for editing
+    fun iniciarFormulario(registroId: String? = null) {
         viewModelScope.launch {
-            _uiState.value = _uiState.value.copy(isLoading = true)
+            _uiState.value = _uiState.value.copy(isLoading = true) // Start loading state
 
             try {
+                // Load all activities first
                 val actividades = repository.obtenerActividades()
-                _uiState.value = _uiState.value.copy(
-                    actividades = actividades,
-                    isLoading = false,
-                    errorMessage = null
-                )
+
+                // If a registroId is provided, load the existing record for editing
+                if (registroId != null) {
+                    val (id, registro) = repository.obtenerRegistroActividadPorId(registroId)
+                        ?: throw Exception("Registro no encontrado")
+
+                    // Find the selected actividad and subactividad by ID
+                    val selectedActividad = actividades.find { it.id == registro.actividadId }
+                    var selectedSubactividad: Subactividad? = null
+                    if (registro.subactividadId != null && selectedActividad != null && selectedActividad.tieneSubactividades) {
+                        val subactividades = repository.obtenerSubactividadesPorActividad(selectedActividad.id)
+                        selectedSubactividad = subactividades.find { it.id == registro.subactividadId }
+                        _uiState.value = _uiState.value.copy(subactividades = subactividades) // Populate subactividades list
+                    }
+
+                    _uiState.value = _uiState.value.copy(
+                        registroId = id,
+                        actividades = actividades,
+                        actividadSeleccionada = selectedActividad,
+                        subactividadSeleccionada = selectedSubactividad,
+                        fecha = registro.fecha,
+                        horas = registro.horas.toString(),
+                        minutos = registro.minutos.toString(),
+                        comentarios = registro.comentarios,
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                } else {
+                    // If no registroId, it's a new registration, just populate activities and default date
+                    val fechaActual = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                    _uiState.value = _uiState.value.copy(
+                        registroId = null, // Ensure ID is null for new records
+                        actividades = actividades,
+                        actividadSeleccionada = null,
+                        subactividadSeleccionada = null,
+                        subactividades = emptyList(), // Clear subactivities for new record
+                        fecha = fechaActual,
+                        horas = "",
+                        minutos = "",
+                        comentarios = "",
+                        isLoading = false,
+                        errorMessage = null
+                    )
+                }
             } catch (e: Exception) {
                 _uiState.value = _uiState.value.copy(
                     isLoading = false,
-                    errorMessage = "Error al cargar actividades: ${e.message}"
+                    errorMessage = "Error al cargar datos: ${e.message}"
                 )
             }
         }
     }
 
+
     fun seleccionarActividad(actividad: Actividad) {
         _uiState.value = _uiState.value.copy(
             actividadSeleccionada = actividad,
             subactividadSeleccionada = null,
-            subactividades = emptyList()
+            subactividades = emptyList() // Clear previous subactivities
         )
 
         // Cargar subactividades si la actividad las tiene
@@ -97,6 +139,11 @@ class RegistrarActividadViewModel : ViewModel() {
 
     fun guardarRegistro() {
         val estado = _uiState.value
+        val currentUserId = auth.currentUser?.uid
+        if (currentUserId == null) {
+            _uiState.value = _uiState.value.copy(errorMessage = "Usuario no autenticado")
+            return
+        }
 
         // Validar campos obligatorios
         if (!validarCampos(estado)) {
@@ -108,16 +155,25 @@ class RegistrarActividadViewModel : ViewModel() {
 
             try {
                 val registro = RegistroActividad(
-                    userId = auth.currentUser!!.uid, // User ya está autenticado
+                    userId = currentUserId,
                     actividadId = estado.actividadSeleccionada!!.id,
                     subactividadId = estado.subactividadSeleccionada?.id,
                     fecha = estado.fecha,
                     horas = estado.horas.toInt(),
                     minutos = estado.minutos.toInt(),
-                    comentarios = estado.comentarios
+                    comentarios = estado.comentarios,
+                    // For update, we want to keep the original timestamp, for new, let it be System.currentTimeMillis()
+                    timestamp = estado.registroId?.let { // If it's an edit, try to preserve original timestamp
+                        (repository.obtenerRegistroActividadPorId(it)?.second?.timestamp ?: System.currentTimeMillis())
+                    } ?: System.currentTimeMillis()
                 )
 
-                val resultado = repository.guardarRegistroActividad(registro)
+                val resultado = if (estado.registroId != null) {
+                    repository.actualizarRegistroActividad(estado.registroId, registro)
+                } else {
+                    repository.guardarRegistroActividad(registro)
+                }
+
 
                 if (resultado.isSuccess) {
                     _uiState.value = _uiState.value.copy(
@@ -125,7 +181,8 @@ class RegistrarActividadViewModel : ViewModel() {
                         guardadoExitoso = true,
                         errorMessage = null
                     )
-                    limpiarFormulario()
+                    // No limpiar formulario immediately after success if activity is closing.
+                    // The activity will handle finishing itself.
                 } else {
                     _uiState.value = _uiState.value.copy(
                         isLoading = false,
@@ -185,11 +242,13 @@ class RegistrarActividadViewModel : ViewModel() {
 
     fun limpiarEstadoGuardado() {
         _uiState.value = _uiState.value.copy(guardadoExitoso = false)
+        limpiarFormulario() // Clear form after success is acknowledged
     }
 
     private fun limpiarFormulario() {
         val fechaActual = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
         _uiState.value = _uiState.value.copy(
+            registroId = null, // Crucial: clear ID for new records
             actividadSeleccionada = null,
             subactividadSeleccionada = null,
             subactividades = emptyList(),

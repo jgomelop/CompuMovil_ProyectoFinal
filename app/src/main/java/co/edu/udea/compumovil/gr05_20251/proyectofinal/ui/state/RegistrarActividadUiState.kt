@@ -15,5 +15,6 @@ data class RegistrarActividadUiState(
     val comentarios: String = "",
     val isLoading: Boolean = false,
     val errorMessage: String? = null,
-    val guardadoExitoso: Boolean = false
+    val guardadoExitoso: Boolean = false,
+    val registroId: String? = null,
 )

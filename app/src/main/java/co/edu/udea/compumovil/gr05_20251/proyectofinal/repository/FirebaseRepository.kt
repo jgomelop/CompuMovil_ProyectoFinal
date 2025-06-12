@@ -42,7 +42,7 @@ class FirebaseRepository {
         }
     }
 
-    // Guardar registro de actividad
+    // Guardar nuevo registro de actividad
     suspend fun guardarRegistroActividad(registro: RegistroActividad): Result<String> {
         return try {
             val docRef = db.collection("registros_actividades")
@@ -73,6 +73,35 @@ class FirebaseRepository {
             emptyList()
         }
     }
+
+    // Obtener un solo registro de actividad por ID (PARA EDICIÓN)
+    suspend fun obtenerRegistroActividadPorId(registroId: String): Pair<String, RegistroActividad>? {
+        return try {
+            val docRef = db.collection("registros_actividades").document(registroId)
+            val snapshot = docRef.get().await()
+
+            snapshot.toObject(RegistroActividad::class.java)?.let { registro ->
+                Pair(snapshot.id, registro)
+            }
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    // Actualizar un registro de actividad existente
+    suspend fun actualizarRegistroActividad(registroId: String, updatedRegistro: RegistroActividad): Result<Unit> {
+        return try {
+            db.collection("registros_actividades")
+                .document(registroId)
+                .set(updatedRegistro) // Using set to overwrite the document
+                .await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
 
     // Obtener una actividad por ID
     suspend fun obtenerActividadPorId(actividadId: String): Actividad? {
