@@ -30,6 +30,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.google.firebase.auth.FirebaseAuth
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.registraractividad.RegistrarActividadActivity // Import RegistrarActividadActivity
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.theme.GreenColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,11 +46,8 @@ fun ListarActividadesScreen(
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current // Get the current lifecycle owner
 
-    // Obtener el usuario actual de Firebase Auth
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    // Use DisposableEffect to observe lifecycle events and refresh data on resume
-    // This ensures data is reloaded when the screen becomes active again, e.g., after returning from edit
     DisposableEffect(lifecycleOwner, currentUser?.uid) { // Added currentUser?.uid to the key for re-triggering if user changes
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -64,7 +62,6 @@ fun ListarActividadesScreen(
         }
     }
 
-    // Show toast for deletion messages
     LaunchedEffect(deleteMessage) {
         deleteMessage?.let { message ->
             Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
@@ -72,8 +69,6 @@ fun ListarActividadesScreen(
         }
     }
 
-    // Determine the list to display based on uiState
-    // This ensures currentRegistros is always a valid list, even during Loading or Error states.
     val currentRegistros = remember(uiState) {
         when (uiState) {
             is UiState.Success -> (uiState as UiState.Success).registros
@@ -81,7 +76,6 @@ fun ListarActividadesScreen(
         }
     }
 
-    // If no authenticated user, show message
     if (currentUser == null) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -109,8 +103,8 @@ fun ListarActividadesScreen(
         Text(
             text = "Registros de Actividades",
             style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 16.dp)
+            modifier = Modifier.padding(bottom = 16.dp),
+            color = Color.DarkGray
         )
 
         when (uiState) {
@@ -137,7 +131,6 @@ fun ListarActividadesScreen(
             }
 
             is UiState.Success -> {
-                // Use currentRegistros here, which is already safely cast or empty
                 if (currentRegistros.isEmpty()) {
                     Card(
                         modifier = Modifier.fillMaxWidth()
@@ -154,7 +147,7 @@ fun ListarActividadesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                MaterialTheme.colorScheme.primaryContainer,
+                                Color(0xFFBDECC3),
                                 RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                             )
                             .padding(12.dp),
@@ -313,7 +306,7 @@ fun DetalleRegistroDialog(
     viewModel: ListarActividadesViewModel,
     onDismiss: () -> Unit,
     onDelete: () -> Unit,
-    onEdit: () -> Unit // New callback for edit button
+    onEdit: () -> Unit
 ) {
     Dialog(onDismissRequest = onDismiss) {
         Card(
@@ -334,7 +327,8 @@ fun DetalleRegistroDialog(
                     Text(
                         text = "Detalles del Registro",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
+                        color = Color.DarkGray
                     )
                     IconButton(onClick = onDismiss) {
                         Icon(
@@ -349,7 +343,7 @@ fun DetalleRegistroDialog(
                 // Información del registro
                 DetalleItem(
                     label = "Actividad:",
-                    value = registro.nombreActividad
+                    value = registro.nombreActividad,
                 )
 
                 if (registro.nombreSubactividad != null) {
@@ -451,7 +445,7 @@ fun DetalleItem(
         Text(
             text = label,
             fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.primary,
+            color = GreenColor,
             modifier = Modifier.weight(1f)
         )
         Text(

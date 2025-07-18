@@ -27,7 +27,9 @@ import androidx.compose.material.icons.filled.ExitToApp // Keeping this one for 
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -38,6 +40,7 @@ import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividade
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.listaractividades.ListarActividadesViewModel
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.registraractividad.RegistrarActividadScreen
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.sections.registraractividad.RegistrarActividadViewModel
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.theme.GreenColor
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.theme.ProyectoFinalTheme
 
 data class DrawerItem(val title: String, val route: String)
@@ -98,7 +101,12 @@ fun AppNavigation(
                         }) {
                             Icon(Icons.Default.Menu, contentDescription = "Abrir menú")
                         }
-                    }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = GreenColor,         // fondo verde
+                        titleContentColor = Color.White,            // texto blanco
+                        navigationIconContentColor = Color.White    // ícono blanco
+                    )
                 )
             }
         ) { innerPadding ->

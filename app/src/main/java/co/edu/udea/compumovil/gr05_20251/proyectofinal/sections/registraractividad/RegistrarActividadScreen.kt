@@ -11,11 +11,13 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.Actividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.data.Subactividad
 import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.state.RegistrarActividadUiState
+import co.edu.udea.compumovil.gr05_20251.proyectofinal.ui.theme.GreenColor
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -39,8 +41,7 @@ fun RegistrarActividadScreen(
     var expandedSubactividad by remember { mutableStateOf(false) }
 
     Column(
-        modifier = Modifier
-            .fillMaxSize()
+        modifier = modifier
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -48,7 +49,8 @@ fun RegistrarActividadScreen(
         // Título
         Text(
             text = "Registrar Actividad",
-            style = MaterialTheme.typography.headlineMedium
+            style = MaterialTheme.typography.headlineMedium,
+            color = Color.DarkGray
         )
 
         // Dropdown Actividad
@@ -64,7 +66,13 @@ fun RegistrarActividadScreen(
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedActividad) },
                 modifier = Modifier
                     .menuAnchor()
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                colors =  OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = GreenColor,
+                    cursorColor = Color.DarkGray
+                ),
             )
 
             ExposedDropdownMenu(
@@ -97,7 +105,13 @@ fun RegistrarActividadScreen(
                     trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedSubactividad) },
                     modifier = Modifier
                         .menuAnchor()
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
+                    colors =  OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = GreenColor,
+                        unfocusedBorderColor = Color.Gray,
+                        focusedLabelColor = GreenColor,
+                        cursorColor = Color.DarkGray
+                    ),
                 )
 
                 ExposedDropdownMenu(
@@ -128,7 +142,13 @@ fun RegistrarActividadScreen(
                     Icon(Icons.Default.DateRange, contentDescription = "Seleccionar fecha")
                 }
             },
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors =  OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenColor,
+                unfocusedBorderColor = Color.Gray,
+                focusedLabelColor = GreenColor,
+                cursorColor = Color.DarkGray
+            ),
         )
 
         // Campos Horas y Minutos en fila
@@ -141,7 +161,13 @@ fun RegistrarActividadScreen(
                 onValueChange = onHorasChanged,
                 label = { Text("Horas *") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors =  OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = GreenColor,
+                    cursorColor = Color.DarkGray
+                ),
             )
 
             OutlinedTextField(
@@ -149,7 +175,13 @@ fun RegistrarActividadScreen(
                 onValueChange = onMinutosChanged,
                 label = { Text("Minutos *") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(1f),
+                colors =  OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = GreenColor,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedLabelColor = GreenColor,
+                    cursorColor = Color.DarkGray
+                ),
             )
         }
 
@@ -160,14 +192,24 @@ fun RegistrarActividadScreen(
             label = { Text("Comentarios *") },
             minLines = 3,
             maxLines = 5,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors =  OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = GreenColor,
+                unfocusedBorderColor = Color.Gray,
+                focusedLabelColor = GreenColor,
+                cursorColor = Color.DarkGray
+            ),
         )
 
         // Botón Guardar
         Button(
             onClick = onGuardarClick,
             enabled = !uiState.isLoading,
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = GreenColor,
+                contentColor = Color.White
+            ),
         ) {
             if (uiState.isLoading) {
                 CircularProgressIndicator(
