@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.google.firebase.auth.FirebaseAuth
@@ -147,7 +148,7 @@ fun ListarActividadesScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(
-                                Color(0xFFBDECC3),
+                                Color(0xFF8DC63F),
                                 RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp)
                             )
                             .padding(12.dp),
@@ -157,21 +158,21 @@ fun ListarActividadesScreen(
                             text = "Actividad",
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(2f),
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = Color.White
                         )
                         Text(
                             text = "Tiempo",
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = Color.White
                         )
                         Text(
                             text = "Fecha",
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f),
                             textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
+                            color = Color.White
                         )
                     }
 
@@ -243,12 +244,7 @@ fun RegistroRow(
             .fillMaxWidth()
             .clickable { onClick() }
             .padding(12.dp)
-            .background(
-                if (registro.registro.comentarios.isNotEmpty())
-                    MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f)
-                else
-                    Color.Transparent
-            ),
+            .background(Color.Transparent),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -327,7 +323,6 @@ fun DetalleRegistroDialog(
                     Text(
                         text = "Detalles del Registro",
                         style = MaterialTheme.typography.headlineSmall,
-                        fontWeight = FontWeight.Bold,
                         color = Color.DarkGray
                     )
                     IconButton(onClick = onDismiss) {
@@ -340,38 +335,96 @@ fun DetalleRegistroDialog(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Información del registro
-                DetalleItem(
-                    label = "Actividad:",
-                    value = registro.nombreActividad,
+                // Actividad
+                Text(
+                    text = "Actividad:",
+                    fontWeight = FontWeight.Bold,
+                    color = GreenColor
                 )
-
-                if (registro.nombreSubactividad != null) {
-                    DetalleItem(
-                        label = "Subactividad:",
-                        value = registro.nombreSubactividad
+                Spacer(modifier = Modifier.height(4.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Text(
+                        text = registro.nombreActividad,
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
                     )
                 }
 
-                DetalleItem(
-                    label = "Fecha:",
-                    value = viewModel.formatearFecha(registro.registro.fecha)
-                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                DetalleItem(
-                    label = "Tiempo:",
-                    value = viewModel.formatearTiempo(
-                        registro.registro.horas,
-                        registro.registro.minutos
+                // Subactividad (si existe)
+                if (registro.nombreSubactividad != null) {
+                    Text(
+                        text = "Subactividad:",
+                        fontWeight = FontWeight.Bold,
+                        color = GreenColor
                     )
-                )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    ) {
+                        Text(
+                            text = registro.nombreSubactividad,
+                            modifier = Modifier.padding(12.dp),
+                            style = MaterialTheme.typography.bodyMedium
+                        )
+                    }
 
+                    Spacer(modifier = Modifier.height(8.dp))
+                }
+
+                // Fecha
+                Text(
+                    text = "Fecha:",
+                    fontWeight = FontWeight.Bold,
+                    color = GreenColor
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Text(
+                        text = viewModel.formatearFecha(registro.registro.fecha),
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                // Tiempo
+                Text(
+                    text = "Tiempo:",
+                    fontWeight = FontWeight.Bold,
+                    color = GreenColor
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Text(
+                        text = viewModel.formatearTiempo(
+                            registro.registro.horas,
+                            registro.registro.minutos
+                        ),
+                        modifier = Modifier.padding(12.dp),
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+
+                // Comentarios (sin modificar)
                 if (registro.registro.comentarios.isNotEmpty()) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = "Comentarios:",
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        color = GreenColor
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Card(
@@ -395,7 +448,6 @@ fun DetalleRegistroDialog(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botón Borrar
                     Button(
                         onClick = onDelete,
                         modifier = Modifier.weight(1f),
@@ -412,10 +464,13 @@ fun DetalleRegistroDialog(
                         Text("Borrar")
                     }
 
-                    // Botón Editar
                     OutlinedButton(
-                        onClick = onEdit, // Use the new onEdit callback
-                        modifier = Modifier.weight(1f)
+                        onClick = onEdit,
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            contentColor = GreenColor
+                        ),
+                        border = BorderStroke(1.dp, GreenColor)
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
@@ -430,6 +485,7 @@ fun DetalleRegistroDialog(
         }
     }
 }
+
 
 @Composable
 fun DetalleItem(
