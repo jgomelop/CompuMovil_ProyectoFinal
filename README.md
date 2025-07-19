@@ -1,6 +1,6 @@
 # Registro de Actividades - App Android
 
-Aplicación móvil desarrollada en **Kotlin** con **Jetpack Compose**, diseñada para registrar, listar, editar y eliminar actividades realizadas por los usuarios. La app utiliza **Firebase** como backend y ofrece una interfaz moderna, intuitiva y reactiva.
+Aplicación móvil desarrollada en **Kotlin** con **Jetpack Compose**, diseñada para registrar, listar, editar y eliminar actividades realizadas por los usuarios. La app utiliza **Firebase** como backend.
 
 ## ✨ Características
 
