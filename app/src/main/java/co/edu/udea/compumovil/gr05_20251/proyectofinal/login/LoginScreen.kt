@@ -75,7 +75,6 @@ fun LoginScreen(
                 Text(
                     text = if (uiState.isSignUpMode) "Crear Cuenta" else "Iniciar Sesión",
                     fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
                     modifier = Modifier.padding(bottom = 32.dp),
                     color = Color.DarkGray
                 )
